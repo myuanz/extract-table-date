@@ -13,7 +13,7 @@ def print_tree(elem, spec=0):
         print('-'*spec, elem.name)
     if hasattr(elem, 'children'):
         for i in elem.children:
-            test(i, spec+2)
+            print_tree(i, spec+2)
 with open(r'html\yuzuki-club.com.html', encoding='utf-8') as f:
     html = f.read()
 bs = BeautifulSoup(html, 'html5lib')
@@ -63,7 +63,6 @@ def unwrap(elem, spec=0, show_debug=False):
 # %%
 for i in os.listdir('html'):
     filename = f'html/{i}'
-    filename = 'html/yesgrp.com.html'
     with open(filename, encoding='utf-8') as f:
         html = f.read()
     for t in re.findall('(<br.*?>)', html):
@@ -76,93 +75,3 @@ for i in os.listdir('html'):
     print_tree(bs, 0)
     break
 
-'''
-html/cityheaven.net.html
-html/yesgrp.com.html
-'''
-# %%
-t = '''
-<div id="girlprofile_sukkin">
-    <div class="">
-        <h4 class="title pcwidgets-title">
-            <span class="title_font">出勤情報</span>
-        </h4>
-    </div>
-    <ul id="girl_sukkin">
-        <li>
-            <dl>
-                <dt class="sunday">
-                    11/3(日)
-                </dt>
-                <dd>
-                    <div class="go2">
-                        8:30<br>-<br>
-                        17:00 
-                    </div>
-                </dd>
-            </dl>
-        </li>
-        <li>
-            <dl>
-                <dt>
-                    11/4(月)
-                </dt>
-                <dd class="holiday2"></dd>
-            </dl>
-        </li>
-        <li>
-            <dl>
-                <dt>
-                    11/5(火)
-                </dt>
-                <dd>
-                    <div class="go2">
-                        9:00<br>-<br>
-                        17:00 
-                    </div>
-                </dd>
-            </dl>
-        </li>
-        <li>
-            <dl>
-                <dt>
-                    11/6(水)
-                </dt>
-                <dd class="holiday2"></dd>
-            </dl>
-        </li>
-        <li>
-            <dl>
-                <dt>
-                    11/7(木)
-                </dt>
-                <dd>
-                    <div class="go2">
-                        9:00<br>-<br>
-                        17:00 
-                    </div>
-                </dd>
-            </dl>
-        </li>
-        <li>
-            <dl>
-                <dt>
-                    11/8(金)
-                </dt>
-                <dd class="holiday2"></dd>
-            </dl>
-        </li>
-        <li>
-            <dl>
-                <dt class="saturdday">
-                    11/9(土)
-                </dt>
-                <dd class="holiday2"></dd>
-            </dl>
-        </li>
-    </ul>
-</div>
-'''
-
-print(re.findall('(<br.*?>)', t))
-print(re.sub('<br>[<br].*?[>]', r'', t))
