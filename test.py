@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import re
 import bs4
 from time import sleep
-
+import os
 # %%
 # nlp = zh_core_web_sm.load()
 # # %%
@@ -67,7 +67,7 @@ from time import sleep
 def test(elem, spec):
     # print(type(elem), end='-')
     if elem.name:
-        print('-'*spec, elem.name, type(elem))
+        print('-'*spec, elem.name)
     # print()
 
     if hasattr(elem, 'children'):
@@ -77,46 +77,6 @@ with open(r'html\yuzuki-club.com.html', encoding='utf-8') as f:
     html = f.read()
 bs = BeautifulSoup(html)
 test(bs, 0)
-# %%
-def test2(elem, spec):
-    if elem.name:
-        # print('-'*spec, elem.name)
-        print([i for i in elem.next_siblings if type(i) == bs4.element.Tag], len([i for i in elem.next_siblings if type(i) == bs4.element.Tag]))
-        while len([i for i in elem.next_siblings if type(i) == bs4.element.Tag]) == 1:
-            children = list(elem.children)
-            if all([type(i) != bs4.element.Tag for i in children]):
-                # print([type(i) for i in children])
-                # children_text = "".join(children)
-                parents = list(elem.parents)[0]
-                print(parents)
-                print('解包', elem)
-                elem.unwrap()
-                
-                # parents.insert_after(children_text)
-                # elem.decompose()
-                # print('移除', elem.name, children_text, ', 换做', parents.name)
-                elem = parents
-                
-            else:
-                break
-
-    if hasattr(elem, 'children'):
-        for i in elem.children:
-            test2(i, spec+2)
-
-with open(r'html/yuzuki-club.com.html', encoding='utf-8') as f:
-    html = f.read()
-bs = BeautifulSoup(html, 'html5lib')
-test2(bs.body, 0)
-test(bs, 0)
-bs
-# %%
-len(list(list(bs.body.table.tbody.tr.children)[0].next_siblings))
-
-# %%
-t = list(bs.body.table.tbody.tr.children)[0]
-# %%
-type(bs.body.table.tbody.tr) == bs4.element.Tag
 # %%
 t = '''
 <tr>
@@ -139,24 +99,34 @@ def izip(*iters):
         if iter_:
             for i in iter_:
                 yield i
-
+def get_bro_by_parents(elem, Tag=False):
+    parents = next(elem.parents)
+    ret = []
+    for i in parents.children:
+        if i is elem:
+            continue
+        if Tag and type(i) != bs4.element.Tag:
+            continue
+        ret.append(i)
+    return ret
+# %%
 def test3(elem, spec):
     if elem.name:
         
-        print('当前元素: ', elem)
-        print('元素兄弟节点: ', [i for i in elem.fetchPreviousSiblings()], [type(i) for i in elem.fetchPreviousSiblings()])
+        # print('当前元素: ', elem)
+        # print('元素兄弟节点: ', get_bro_by_parents(elem, True))
         while all(
-            [type(i) != bs4.element.Tag for i in elem.fetchPreviousSiblings()]
+            [type(i) != bs4.element.Tag for i in get_bro_by_parents(elem)]
         ):
             children = list(elem.children)
             if all([type(i) != bs4.element.Tag for i in children]):
                 parents = list(elem.parents)[0]
-                print('解包前', bs)
+                # print('解包前', bs)
                 elem.unwrap()
-                print('解包后', bs)
+                # print('解包后', bs)
                 elem = parents
-                print('当前元素: ', elem)
-                print('元素兄弟节点: ', [i for i in elem.fetchPreviousSiblings()], [type(i) for i in elem.fetchPreviousSiblings()])
+                # print('当前元素: ', elem)
+                # print('元素兄弟节点: ', [i for i in elem.fetchPreviousSiblings()], [type(i) for i in elem.fetchPreviousSiblings()])
             else:
                 break
 
@@ -164,22 +134,20 @@ def test3(elem, spec):
         for i in elem.children:
             test3(i, spec+2)
 
-test3(bs, 0)
-# %%
-text = '''
-<html><head></head><body>
-    
-        <div align="center">
-            11/04(月) 
-        </div>
-    
-    
-        <div align="center">
-            11/05(火) 
-        </div>
-    
 
-</body></html>
+# %%
+for i in os.listdir('html'):
+    filename = f'html/{i}'
+
+    with open(filename, encoding='utf-8') as f:
+        html = f.read()
+    bs = BeautifulSoup(html, 'html5lib')
+    print(filename)
+    test(bs, 0)
+    test3(bs.body, 0)
+    test(bs, 0)
+
 '''
-bs = BeautifulSoup(t, 'html5lib')
-bs
+html/cityheaven.net.html
+html/yesgrp.com.html
+'''
