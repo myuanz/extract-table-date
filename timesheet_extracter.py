@@ -138,11 +138,11 @@ class TimesheetExtracter:
         elif len(res) > 2:
             mon, day, *left = res
             msg = 'warning'
-            print(f'warning date: {text}, {res}')
+            # print(f'warning date: {text}, {res}')
         else:
             mon, day = [0, 0]
             msg = 'error'
-            print(f'error date: {text}, {res}')
+            # print(f'error date: {text}, {res}')
         return dict(date=TimesheetExtracter.build_date(month=mon, day=day), msg=msg)
 
     @staticmethod
@@ -175,7 +175,7 @@ class TimesheetExtracter:
                     [diff_ == lentags - 1 for diff_ in diffs[:index] + diffs[index+1:]]
                 )
                 if other_diff == lentags - 1:
-                    print('decompose: ', layer[index])
+                    # print('decompose: ', layer[index])
                     layer[index].decompose()
                     break
     
@@ -283,6 +283,7 @@ class TimesheetExtracter:
         return periods
 
 if __name__ == "__main__":
-    with open(r'html\cityheaven.net.html', encoding='utf-8') as f:
-        html = f.read()
-    print(TimesheetExtracter.get_time_sheet(html))
+    for file in os.listdir('html'):
+        with open(r'html/' + file, encoding='utf-8') as f:
+            html = f.read()
+        print(TimesheetExtracter.get_time_sheet(html))
