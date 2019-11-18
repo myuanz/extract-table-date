@@ -8,7 +8,6 @@ import os
 from datetime import datetime, timedelta
 from typing import List
 
-
 class Period:
     start: datetime = None
     end: datetime = None
@@ -43,12 +42,18 @@ class TimesheetExtracter:
                     yield i
 
     @staticmethod
-    def get_bro_by_parents(elem, Tag=False):
-        parents = next(elem.parents)
+    def get_bro_by_parents(elem, Tag=False, content_self=False):
+        try:
+            parents = next(elem.parents)
+        except :
+            return []
         ret = []
         for i in parents.children:
-            if i is elem:
+            if not content_self and i is elem:
                 continue
+            if type(i) == bs4.element.Comment:
+                continue
+
             if Tag and type(i) != bs4.element.Tag:
                 continue
             ret.append(i)
@@ -56,29 +61,58 @@ class TimesheetExtracter:
 
     @staticmethod
     def unwrap_all(elem, spec=0, show_debug=False):
-        if elem.name:
+        '''
+        如果是根节点, 那么直接使用其body
+        如果元素是Tag:
+            对于所有的dt, dd, td, th, 都将其子元素展开为纯文本
+            如果元素只有一个子Tag元素, 子元素成为该元素父元素的子元素, 销毁此元素
+            如果元素只有文本元素, 
+                如果它没有兄弟元素, 或者(兄弟元素只有一个, 并且兄弟元素可以解析为日期)
+                    文本成为父元素的子元素, 销毁此元素
+            
+        Tag , NavigableString , BeautifulSoup , Comment
+        '''
+        elem_type = type(elem)
+        # print(show_debug)
+        if elem_type == bs4.BeautifulSoup:
+            TimesheetExtracter.unwrap_all(elem.body, show_debug=show_debug)
+            
+        
+        if elem_type == bs4.element.Tag:
+            show_debug and print('elem: ', elem)
+            if elem.name in ['dt', 'dd', 'td', 'th']:
+                elem.string = elem.text
 
-            show_debug and print('当前元素: ', elem)
-            show_debug and print('元素兄弟节点: ', TimesheetExtracter.get_bro_by_parents(elem, True))
-            while all(
-                [type(i) != bs4.element.Tag for i in TimesheetExtracter.get_bro_by_parents(elem)]
-            ):
-                children = list(elem.children)
-                if all([type(i) != bs4.element.Tag for i in children]):
-                    parents = list(elem.parents)[0]
-                    show_debug and print('解包前', bs)
+            children = [i for i in elem.children if type(i) == bs4.element.Tag]
+            parents = next(elem.parents)
+            if len(children) == 1 and type(parents) != bs4.BeautifulSoup:
+                show_debug and print('one children: ', children[0].name)
+                elem.unwrap()
+                elem = parents
+                show_debug and print('result elem: ', elem)
+            children_type = [type(i) in [bs4.element.NavigableString, bs4.element.Comment] for i in elem.children]
+            
+            if all(children_type):
+                bros = TimesheetExtracter.get_bro_by_parents(elem, Tag=False, content_self=False)
+                flag = False
+                if len([i for i in bros if type(i) == bs4.element.Tag]) == 0:
+                    flag = True
+                elif all([type(i) != bs4.element.Tag for i in bros]):
+                    # print("".join([i.text for i in bros]))
+
+                    ret = TimesheetExtracter.extract_date("".join([i.text for i in bros]))
+                    if ret['msg'] == 'ok':
+                        flag = True
+
+                
+                if flag:
+                    show_debug and print('text children: ', elem.name)
                     elem.unwrap()
-                    show_debug and print('解包后', bs)
                     elem = parents
-                    show_debug and print('当前元素: ', elem)
-                    show_debug and print('元素兄弟节点: ', [i for i in elem.fetchPreviousSiblings()], [
-                        type(i) for i in elem.fetchPreviousSiblings()])
-                else:
-                    break
-
+                    show_debug and print('result elem: ', elem)
         if hasattr(elem, 'children'):
             for i in elem.children:
-                TimesheetExtracter.unwrap_all(i, spec+2)
+                TimesheetExtracter.unwrap_all(i, spec+2, show_debug=show_debug)
 
     @staticmethod
     def flat_tree(elem, layer=0, nodes=None):
@@ -180,15 +214,15 @@ class TimesheetExtracter:
                     break
     
     @staticmethod
-    def get_time_sheet(html: str):
+    def get_time_sheet(html: str, show_debug=False):
 
         for t in re.findall('(<br.*?>)', html):
             html = html.replace(t, ' ')
 
-        bs = BeautifulSoup(html, 'html5lib')
-        # print_tree(bs, 0)
-        TimesheetExtracter.unwrap_all(bs.body, 0, False)
-        # print_tree(bs, 0)
+        bs = BeautifulSoup(html, 'html.parser')
+        show_debug and TimesheetExtracter.print_tree(bs, 0)
+        TimesheetExtracter.unwrap_all(bs, 0, show_debug)
+        show_debug and TimesheetExtracter.print_tree(bs, 0)
 
         periods: List[Period] = []
 
@@ -283,7 +317,7 @@ class TimesheetExtracter:
         return periods
 
 if __name__ == "__main__":
-    for file in os.listdir('html'):
+    for file in os.listdir('html')[2:3]:
         with open(r'html/' + file, encoding='utf-8') as f:
             html = f.read()
-        print(TimesheetExtracter.get_time_sheet(html))
+        print(TimesheetExtracter.get_time_sheet(html.split('-split-')[0], show_debug=True))
