@@ -251,7 +251,7 @@ class TimesheetExtracter:
                     [TimesheetExtracter.extract_time(i.text) for i in elems[k:2*k]],
                     [TimesheetExtracter.extract_time(i.text) for i in elems[2*k:3*k]]
                 ]
-            elif max_value / pre_value == 2:
+            elif max_value / pre_value == 2 or max_value in [14, 16, 28]:
                 # 若干排 两列的, 一列日期, 一列时间
                 elems = flat[max_index]
                 date = []
@@ -276,9 +276,10 @@ class TimesheetExtracter:
 
             else:
                 # 我也不知道多少, 随缘匹配吧
-
+                
                 date = []
                 time = [[]]
+                                    
                 # print_tree(bs, 0)
                 # print(elems)
                 # print('我也不知道多少, 随缘匹配吧')
